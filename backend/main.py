@@ -70,8 +70,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app = FastAPI()
-
 @app.get("/")
 def home():
     return {"message": "App deployed successfully!"}

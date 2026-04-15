@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kreamy Koffee Dashboard</title>
+    <style>
+        body { font-family: Arial; }
+        #reportModal {
+            display: none;
+            position: fixed;
+            top: 10%;
+            left: 20%;
+            width: 60%;
+            height: 70%;
+            background: white;
+            border: 2px solid black;
+            padding: 10px;
+        }
+        textarea {
+            width: 100%;
+            height: 70%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Kreamy Koffee Dashboard</h1>
+
+    <h2>Stocks</h2>
+    <ul id="stockList"></ul>
+
+    <select id="stockName">
+        <option>Coffee Beans: Assorted high-quality roasts.</option>
+        <option>Milk & Alternatives: Dairy and plant-based options.</option>
+        <option>Syrups & Sweeteners: Various flavors and sweeteners.</option>
+        <option>Disposable Supplies: Branded cups, lids, and straws for takeout.</option>
+    </select>
+    <input id="quantity" type="number" placeholder="Quantity">
+    <button onclick="addStock()">+ Add Stock</button>
+
+    <h3>Total Stock Count: <span id="totalStock">0</span></h3>
+
+    <h2>Notifications</h2>
+    <button onclick="showNotifications()">🔔</button>
+
+    <h2>Email</h2>
+    <button onclick="openReport()">+ Compose Report</button>
+
+    <!-- Report Modal -->
+    <div id="reportModal">
+        <h2>Compose Report</h2>
+        <textarea id="reportContent" placeholder="Write your report here..."></textarea><br>
+        <button onclick="finishReport()">Finish Report</button>
+        <button id="submitBtn" style="display:none;" onclick="submitReport()">Submit Report</button>
+        <button onclick="closeReport()">Close</button>
+    </div>
+
+<script>
+async function loadStocks() {
+    const res = await fetch("http://127.0.0.1:8000/stocks");
+    const stocks = await res.json();
+
+    const list = document.getElementById("stockList");
+    const total = document.getElementById("totalStock");
+
+    list.innerHTML = "";
+    let totalCount = 0;
+
+    stocks.forEach(s => {
+        const li = document.createElement("li");
+        const qty = Number(s.quantity) || 0;
+        li.textContent = `${s.name}: ${qty}`;
+        list.appendChild(li);
+        totalCount += qty;
+    });
+
+    total.textContent = totalCount;
+}
+
+async function addStock() {
+    const name = document.getElementById("stockName").value;
+    const quantityInput = document.getElementById("quantity").value;
+
+    if (!quantityInput || isNaN(quantityInput) || Number(quantityInput) <= 0) {
+        alert("Please enter a valid quantity.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("quantity", quantityInput);
+
+    try {
+        await fetch("http://127.0.0.1:8000/add-stock", {
+            method: "POST",
+            body: formData
+        });
+
+        document.getElementById("quantity").value = "";
+        loadStocks();
+    } catch (error) {
+        alert("Error adding stock. Make sure backend is running.");
+    }
+}
+}
+
+function showNotifications() {
+    alert("Email from HQ: Submit your daily report");
+}
+
+function openReport() {
+    document.getElementById("reportModal").style.display = "block";
+}
+
+function closeReport() {
+    document.getElementById("reportModal").style.display = "none";
+    document.getElementById("submitBtn").style.display = "none";
+}
+
+function finishReport() {
+    alert("Report finalized. You can now submit.");
+    document.getElementById("submitBtn").style.display = "inline";
+}
+
+async function submitReport() {
+    try {
+        await fetch("http://127.0.0.1:8000/send-report", {
+            method: "POST"
+        });
+        alert("Report Sent!");
+        closeReport();
+    } catch (error) {
+        alert("Error sending report. Check backend connection.");
+    }
+}
+}
+
+loadStocks();
+</script>
+</body>
+</html>
